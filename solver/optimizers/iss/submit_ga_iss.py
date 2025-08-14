@@ -1,18 +1,29 @@
 #!/usr/bin/env python3
 """
-Submit  Genetic Algorithm Solution for ISS Problem
+Enhanced Genetic Algorithm Solution Submission for ISS Problem
 Programmable Cubes Challenge - GECCO 2024 Space Optimisation Competition (SpOC)
 
-CRITICAL FIXES APPLIED:
-✅ FITNESS DIRECTION : Smaller/negative fitness is better
-✅ All selection, elitism, and crossover operators fixed
-✅ Inverse-move cleanup reduces junk sequences  
-✅ Adaptive mutation breaks stagnation plateaus
+This module executes the enhanced genetic algorithm optimization for the International
+Space Station spacecraft assembly problem and generates a properly formatted submission
+file for competitive evaluation. The algorithm incorporates corrected fitness direction
+optimization, inverse-move cleanup, adaptive mutation mechanisms, and comprehensive
+performance analysis.
 
-This should give a MASSIVE improvement since the algorithm will now
-optimize in the correct direction toward negative fitness values.
+Key algorithmic improvements include:
+- Corrected fitness direction optimization (negative values indicate superior solutions)
+- All selection, elitism, and crossover operators properly configured
+- Inverse-move cleanup for enhanced solution efficiency
+- Adaptive mutation rate adjustment for stagnation prevention
 
-Target: Achieve fitness of -0.991 or better
+Target Performance: Achieve fitness of -0.991 or superior for championship-level results
+
+Usage:
+    python solver/optimizers/iss/submit_ga_iss.py
+
+Dependencies:
+    - numpy: Numerical array operations
+    - json: Submission file formatting
+    - time: Performance timing analysis
 """
 
 import sys
@@ -84,125 +95,125 @@ def create_fixed_length_decision_vector(chromosome, max_moves):
     return decision_vector
 
 def main():
-    """Run the genetic algorithm and create submission."""
-    print("🔧 LAUNCHING  GENETIC ALGORITHM")
-    print("✅ FITNESS DIRECTION FIXED")
-    print("✅ JSON FORMAT ")
-    print("🎯 TARGET: First place performance (-0.991 or better)")
-    print("✅ CRITICAL FIXES APPLIED:")
-    print("   • Fitness direction  (smaller is better)")
-    print("   • All operators now optimize toward negative fitness")
-    print("   • Inverse-move cleanup removes canceling sequences")
-    print("   • Adaptive mutation breaks stagnation plateaus")
-    print("=" * 70)
+    """Execute genetic algorithm optimization and generate submission file."""
+    print("=" * 80)
+    print("Enhanced Genetic Algorithm Solution Submission for ISS Problem")
+    print("Programmable Cubes Challenge - GECCO 2024 Competition")
+    print("=" * 80)
+    print()
+    print("Algorithm Configuration:")
+    print("  • Optimization Method: Enhanced Genetic Algorithm")
+    print("  • Target Performance: Fitness ≤ -0.991 (championship level)")
+    print("  • Key Improvements: Corrected fitness direction, adaptive mechanisms")
+    print("  • Output Format: Standardized competition submission")
+    print()
     
-    start_time = time.time()
+    algorithm_start_time = time.time()
     
-    # Run the  genetic algorithm
-    print("Running  genetic algorithm...")
+    # Execute genetic algorithm optimization
+    print("Executing enhanced genetic algorithm optimization...")
     best_chromosome, best_fitness, best_moves = genetic_algorithm_iss()
     
-    execution_time = time.time() - start_time
+    execution_time = time.time() - algorithm_start_time
     
-    print(f"\n🔧  OPTIMIZATION COMPLETED!")
-    print(f"⏱️  Execution time: {execution_time:.1f} seconds")
-    print(f"🎯 Best fitness: {best_fitness:.6f}")
-    print(f"🔧 Best moves: {best_moves}")
-    print(f"📏 Chromosome length: {len(best_chromosome)}")
+    print()
+    print("=" * 80)
+    print("Optimization Results Summary")
+    print("=" * 80)
+    print(f"Execution time: {execution_time:.1f} seconds")
+    print(f"Best fitness achieved: {best_fitness:.6f}")
+    print(f"Number of moves: {best_moves}")
+    print(f"Chromosome length: {len(best_chromosome)}")
     
-    # Performance analysis with  understanding
+    # Performance analysis with corrected fitness understanding
     target_fitness = -0.991
-    original_fitness = 0.186  # Original 9th place performance
+    baseline_fitness = 0.186  # Original baseline performance
     current_fitness = best_fitness
     
-    print(f"\n📊 PERFORMANCE ANALYSIS:")
-    print(f"Original performance (9th place): {original_fitness:.6f}")
-    print(f"Target performance (1st place): {target_fitness:.6f}")
-    print(f"Achieved performance: {current_fitness:.6f}")
+    print()
+    print("Performance Analysis:")
+    print(f"  • Baseline performance: {baseline_fitness:.6f}")
+    print(f"  • Target performance: {target_fitness:.6f}")
+    print(f"  • Achieved performance: {current_fitness:.6f}")
     
-    # Calculate improvements
-    improvement_over_original = original_fitness - current_fitness
-    print(f"Improvement over original: {improvement_over_original:.6f}")
+    # Calculate performance improvements
+    improvement_over_baseline = baseline_fitness - current_fitness
+    print(f"  • Improvement over baseline: {improvement_over_baseline:.6f}")
     
-    # Status determination
+    # Determine performance classification
     if current_fitness <= target_fitness:
-        print("🎯 TARGET ACHIEVED! CHAMPIONSHIP PERFORMANCE!")
-        status_emoji = "🏆"
-        status_text = "CHAMPION"
-        expected_rank = "1st-3rd place"
+        performance_classification = "CHAMPION"
+        expected_ranking = "1st-3rd place"
+        print(f"  • Status: Championship performance achieved")
     elif current_fitness < -0.8:
-        progress = (abs(current_fitness) / 0.991) * 100
-        print(f"🥇 ELITE PERFORMANCE! Progress: {progress:.1f}%")
-        status_emoji = "🥇"
-        status_text = "ELITE"
-        expected_rank = "Top 3"
+        progress_percentage = (abs(current_fitness) / 0.991) * 100
+        performance_classification = "ELITE"
+        expected_ranking = "Top 3"
+        print(f"  • Status: Elite performance | Progress: {progress_percentage:.1f}%")
     elif current_fitness < -0.5:
-        progress = (abs(current_fitness) / 0.991) * 100
-        print(f"🥈 EXCELLENT PERFORMANCE! Progress: {progress:.1f}%")
-        status_emoji = "🥈"
-        status_text = "EXCELLENT"
-        expected_rank = "Top 5"
+        progress_percentage = (abs(current_fitness) / 0.991) * 100
+        performance_classification = "EXCELLENT"
+        expected_ranking = "Top 5"
+        print(f"  • Status: Excellent performance | Progress: {progress_percentage:.1f}%")
     elif current_fitness < -0.2:
-        progress = (abs(current_fitness) / 0.991) * 100
-        print(f"🥉 VERY GOOD PERFORMANCE! Progress: {progress:.1f}%")
-        status_emoji = "🥉"
-        status_text = "VERY GOOD"
-        expected_rank = "Top 10"
+        progress_percentage = (abs(current_fitness) / 0.991) * 100
+        performance_classification = "VERY_GOOD"
+        expected_ranking = "Top 10"
+        print(f"  • Status: Very good performance | Progress: {progress_percentage:.1f}%")
     elif current_fitness < 0:
-        progress = (abs(current_fitness) / 0.991) * 100
-        print(f"✅ NEGATIVE FITNESS ACHIEVED! Progress: {progress:.1f}%")
-        status_emoji = "✅"
-        status_text = "COMPETITIVE"
-        expected_rank = "Top 15"
+        progress_percentage = (abs(current_fitness) / 0.991) * 100
+        performance_classification = "COMPETITIVE"
+        expected_ranking = "Top 15"
+        print(f"  • Status: Competitive performance | Progress: {progress_percentage:.1f}%")
     else:
-        if improvement_over_original > 0:
-            improvement_pct = (improvement_over_original / original_fitness) * 100
-            print(f"📈 IMPROVED PERFORMANCE! {improvement_pct:.1f}% better")
-            status_emoji = "📈"
-            status_text = "IMPROVED"
-            expected_rank = "Better than 9th"
+        if improvement_over_baseline > 0:
+            improvement_percentage = (improvement_over_baseline / baseline_fitness) * 100
+            performance_classification = "IMPROVED"
+            expected_ranking = "Better than baseline"
+            print(f"  • Status: Improved performance | {improvement_percentage:.1f}% better than baseline")
         else:
-            print(f"⚠️ Needs further optimization")
-            status_emoji = "⚠️"
-            status_text = "EXPERIMENTAL"
-            expected_rank = "Experimental"
+            performance_classification = "EXPERIMENTAL"
+            expected_ranking = "Experimental"
+            print(f"  • Status: Experimental result")
     
-    print(f"{status_emoji} STATUS: {status_text}")
-    print(f"🎯 EXPECTED RANKING: {expected_rank}")
+    print(f"  • Performance Classification: {performance_classification}")
+    print(f"  • Expected Ranking: {expected_ranking}")
     
-    # Direction validation
-    if current_fitness < original_fitness:
-        print("✅ OPTIMIZATION DIRECTION CONFIRMED: Algorithm working correctly!")
+    # Validate optimization direction
+    if current_fitness < baseline_fitness:
+        print("  • Optimization Direction: Confirmed correct (algorithm working properly)")
     else:
-        print("⚠️ May need further optimization")
+        print("  • Optimization Direction: May require further optimization")
     
-    # Convert chromosome to decision vector
-    print(f"\n🔧 Converting chromosome to decision vector...")
+    # Convert chromosome to standard decision vector format
+    print()
+    print("Converting solution to competition format...")
     decision_vector = create_fixed_length_decision_vector(best_chromosome, 6000)
     
-    # Create submission with CORRECT format
-    print(f"\n📄 Creating correctly formatted submission...")
+    # Generate submission file with correct format
+    print("Creating standardized submission file...")
     
     challenge_id = "spoc-3-programmable-cubes"
     problem_id = "iss"
     
     output_file = os.path.join(repo_root, "genetic_algorithm_iss_submission.json")
     
-    submission_name = f"{status_emoji}  GA - ISS v4.0"
+    submission_name = f"Enhanced GA - ISS v4.0"
     
     submission_description = (
-        f" Genetic Algorithm for ISS problem with CRITICAL FIXES: "
-        f"(1) Fitness direction  - smaller/negative values are better, "
-        f"(2) All operators (selection, elitism, crossover) now optimize toward negative fitness, "
-        f"(3) Inverse-move cleanup removes redundant sequences, "
-        f"(4) Adaptive mutation breaks stagnation plateaus. "
-        f"Algorithm: Population=100, Generations=250, comprehensive optimization. "
+        f"Enhanced Genetic Algorithm for ISS spacecraft assembly problem. "
+        f"Algorithm improvements: (1) Corrected fitness direction optimization for negative values, "
+        f"(2) Properly configured selection, elitism, and crossover operators, "
+        f"(3) Inverse-move cleanup for solution efficiency, "
+        f"(4) Adaptive mutation rate adjustment for stagnation prevention. "
+        f"Configuration: Population=100, Generations=250, comprehensive optimization strategy. "
         f"Performance: {current_fitness:.6f} fitness with {best_moves} moves. "
-        f"Status: {status_text}. Improvement over 9th place: {improvement_over_original:.6f}. "
-        f"Expected ranking: {expected_rank}."
+        f"Classification: {performance_classification}. "
+        f"Improvement over baseline: {improvement_over_baseline:.6f}. "
+        f"Expected ranking: {expected_ranking}."
     )
     
-    # Create the submission with correct format
+    # Create properly formatted submission
     create_correct_submission(
         challenge_id=challenge_id,
         problem_id=problem_id,
@@ -212,38 +223,40 @@ def main():
         description=submission_description
     )
     
-    print(f"\n📋 SUBMISSION DETAILS:")
-    print(f"📁 File: {output_file}")
-    print(f"🎯 Challenge ID: {challenge_id}")
-    print(f"🧩 Problem ID: {problem_id}")
-    print(f"📏 Decision vector length: {len(decision_vector)}")
-    print(f"🔍 Preview: {decision_vector[:10]}...")
+    print()
+    print("Submission File Details:")
+    print(f"  • File path: {output_file}")
+    print(f"  • Challenge ID: {challenge_id}")
+    print(f"  • Problem ID: {problem_id}")
+    print(f"  • Decision vector length: {len(decision_vector)}")
+    print(f"  • Preview: {decision_vector[:10]}...")
     
-    # Validate JSON format
+    # Validate JSON format integrity
     try:
         with open(output_file, 'r') as f:
-            loaded_data = json.load(f)
-        print(f"✅ JSON format validation: PASSED")
-        print(f"🔑 Keys in submission: {list(loaded_data.keys())}")
+            loaded_submission = json.load(f)
+        print(f"  • JSON format validation: PASSED")
+        print(f"  • Submission keys: {list(loaded_submission.keys())}")
     except Exception as e:
-        print(f"❌ JSON format validation: FAILED - {e}")
+        print(f"  • JSON format validation: FAILED - {e}")
     
-    print(f"\n" + "=" * 70)
-    print("🔧  SUBMISSION READY!")
-    print(f"{status_emoji} Performance Level: {status_text}")
-    print(f"🎯 Expected Ranking: {expected_rank}")
+    print()
+    print("=" * 80)
+    print("Submission Generation Completed")
+    print(f"Performance Level: {performance_classification}")
+    print(f"Expected Ranking: {expected_ranking}")
     
     if current_fitness <= target_fitness:
-        print("🏆 CHAMPIONSHIP LEVEL SUBMISSION!")
+        print("Result: Championship-level submission ready")
     elif current_fitness < 0:
-        print("🏅 COMPETITIVE SUBMISSION!")
-    elif improvement_over_original > 0:
-        print("📈 IMPROVED SUBMISSION!")
+        print("Result: Competitive submission ready")
+    elif improvement_over_baseline > 0:
+        print("Result: Improved baseline submission ready")
     else:
-        print("🔬 EXPERIMENTAL SUBMISSION!")
+        print("Result: Experimental submission ready")
     
-    print(f"⏱️  Total time: {execution_time:.1f} seconds")
-    print("=" * 70)
+    print(f"Total execution time: {execution_time:.1f} seconds")
+    print("=" * 80)
     
     return output_file
 
