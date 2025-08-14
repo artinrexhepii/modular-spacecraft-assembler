@@ -1,26 +1,51 @@
 #!/usr/bin/env python3
 """
- Genetic Algorithm Solver for ISS Problem
+Enhanced Genetic Algorithm for ISS Spacecraft Assembly Problem
 Programmable Cubes Challenge - GECCO 2024 Space Optimisation Competition (SpOC)
 
-CRITICAL FIXES:
-1. ✅ FITNESS DIRECTION : Smaller/more negative fitness is better
-2. ✅ Inverse-move cleanup in chromosome repair  
-3. ✅ Adaptive mutation rate on stagnation
-4. ✅ All operators now correctly optimize toward negative fitness
+This module implements an advanced genetic algorithm with comprehensive experimental
+documentation, visualization capabilities, and result analysis for the International
+Space Station spacecraft assembly optimization problem. The algorithm features
+adaptive mechanisms, intelligent initialization strategies, and systematic
+performance monitoring for competitive optimization results.
 
-TARGET: Achieve fitness of -0.991 or better (correctly optimizing)
+The genetic algorithm employs multi-strategy population initialization, tournament
+selection, adaptive crossover and mutation operators, elite preservation, and
+local search enhancement. Fitness direction optimization ensures proper convergence
+toward negative fitness values, indicating superior assembly configurations.
+
+Key algorithmic enhancements include:
+- Corrected fitness direction optimization (negative values indicate better solutions)
+- Inverse-move cleanup for chromosome efficiency optimization
+- Adaptive mutation rate mechanisms responding to optimization stagnation
+- Comprehensive experimental data collection and academic visualization
+
+Target Performance: Achieve fitness of -0.991 or superior (championship-level performance)
+
+Usage:
+    python solver/optimizers/iss/ga_solver.py
+
+Dependencies:
+    - numpy: Numerical computing and array operations
+    - matplotlib: Result visualization and plotting
+    - tqdm: Progress monitoring during optimization
+    - scipy: Distance calculations and scientific computing
+    - json: Experimental data serialization
 """
 
 import sys
 import os
-import numpy as np
 import random
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for automated plot generation
+import matplotlib.pyplot as plt
+import time
+import json
+from datetime import datetime
 from tqdm import tqdm
 from scipy.spatial.distance import cdist
 from collections import defaultdict
-import copy
-import time
 
 # Add the src directory and the repository root to the Python path
 repo_root = os.path.join(os.path.dirname(__file__), '..', '..', '..')
@@ -29,25 +54,203 @@ sys.path.insert(0, os.path.join(repo_root, 'src'))
 
 from programmable_cubes_UDP import programmable_cubes_UDP
 
-#  Configuration
-POPULATION_SIZE = 100
-GENERATIONS = 250
-TOURNAMENT_SIZE = 5
-ELITE_SIZE = 10
-CROSSOVER_RATE = 0.85
-BASE_MUTATION_RATE = 0.08
-MAX_MUTATION_RATE = 0.25  # For adaptive mutation
-MAX_CHROMOSOME_LENGTH = 800
-MIN_CHROMOSOME_LENGTH = 80
-RANDOM_SEED = None
-LOG_INTERVAL = 20
+import sys
+import os
+import numpy as np
+import random
+import json
+import time
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for automated plot generation
+import matplotlib.pyplot as plt
+from datetime import datetime
+from tqdm import tqdm
+from scipy.spatial.distance import cdist
+from collections import defaultdict
+import copy
 
-# Initialization ratios
-SMART_INITIALIZATION_RATIO = 0.5
-GREEDY_INITIALIZATION_RATIO = 0.3
-RANDOM_RATIO = 0.2
+# Add the src directory and the repository root to the Python path
+repo_root = os.path.join(os.path.dirname(__file__), '..', '..', '..')
+sys.path.insert(0, repo_root)
+sys.path.insert(0, os.path.join(repo_root, 'src'))
 
-# Local search and cleanup
+from programmable_cubes_UDP import programmable_cubes_UDP
+
+# Advanced Genetic Algorithm Configuration Parameters
+POPULATION_SIZE = 100               # Population size for evolutionary optimization
+GENERATIONS = 250                   # Maximum number of evolutionary generations
+TOURNAMENT_SIZE = 5                 # Tournament selection pressure parameter
+ELITE_SIZE = 10                    # Elitism preservation count for best individuals
+CROSSOVER_RATE = 0.85              # Crossover probability for genetic recombination
+BASE_MUTATION_RATE = 0.08          # Base mutation rate for genetic diversity
+MAX_MUTATION_RATE = 0.25           # Maximum adaptive mutation rate
+MAX_CHROMOSOME_LENGTH = 800        # Maximum chromosome length constraint
+MIN_CHROMOSOME_LENGTH = 80         # Minimum chromosome length requirement
+RANDOM_SEED = 42                   # Deterministic seed for reproducible experiments
+LOG_INTERVAL = 20                  # Progress reporting frequency
+
+# Initialization Strategy Distribution
+SMART_INITIALIZATION_RATIO = 0.5   # Intelligent initialization proportion
+GREEDY_INITIALIZATION_RATIO = 0.3  # Greedy initialization proportion  
+RANDOM_RATIO = 0.2                 # Random initialization proportion
+
+# Local Search and Optimization Enhancement Parameters
+LOCAL_SEARCH_RATE = 0.3            # Local search application probability
+LOCAL_SEARCH_ITERATIONS = 15       # Local search iteration depth
+CLEANUP_RATE = 0.8                 # Inverse-move cleanup application rate
+
+# Adaptive Algorithm Parameters
+STAGNATION_THRESHOLD = 25          # Stagnation detection threshold
+ADAPTIVE_MUTATION_FACTOR = 1.5     # Mutation rate amplification factor
+
+# Academic Results and Documentation Configuration
+RESULTS_DIR = "solver/results/iss/optimizers"  # Academic output directory for experimental data
+
+def save_experimental_results(results_data):
+    """
+    Persist comprehensive experimental results to academic-standard JSON format.
+    
+    Args:
+        results_data (dict): Complete experimental results and metadata
+        
+    Returns:
+        str: Path to saved results file
+    """
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    results_path = os.path.join(repo_root, RESULTS_DIR)
+    os.makedirs(results_path, exist_ok=True)
+    
+    filename = f"genetic_algorithm_iss_experiment_{timestamp}.json"
+    filepath = os.path.join(results_path, filename)
+    
+    try:
+        with open(filepath, 'w') as f:
+            json.dump(results_data, f, indent=2, default=str)
+        print(f"Experimental results saved: {filepath}")
+        return filepath
+    except Exception as e:
+        print(f"Error saving experimental results: {e}")
+        return None
+
+def save_solution_visualizations(udp, best_chromosome, output_dir, timestamp):
+    """
+    Generate and save visualizations of the genetic algorithm optimization results.
+    
+    This function creates comprehensive plots showing both the achieved ensemble
+    configuration and the target configuration for comparative analysis of the
+    genetic algorithm optimization performance.
+    
+    Args:
+        udp: The programmable cubes UDP instance
+        best_chromosome: The optimal solution chromosome found by genetic algorithm
+        output_dir (str): Directory path for saving plots
+        timestamp (str): Timestamp for unique file naming
+        
+    Returns:
+        dict: Dictionary containing paths to saved plots
+    """
+    saved_plots = {}
+    
+    try:
+        # Evaluate the best solution to set final cube positions
+        print(f"  • Evaluating best solution for visualization...")
+        udp.fitness(best_chromosome)
+        
+        # Save ensemble (achieved) configuration
+        print("  • Generating and saving ensemble configuration visualization...")
+        plt.figure(figsize=(12, 8))
+        udp.plot('ensemble')
+        ensemble_path = os.path.join(output_dir, f"genetic_algorithm_iss_ensemble_{timestamp}.png")
+        plt.savefig(ensemble_path, dpi=300, bbox_inches='tight', facecolor='white')
+        plt.close()
+        saved_plots['ensemble'] = ensemble_path
+        print(f"    Ensemble plot saved: {ensemble_path}")
+        
+        # Save target configuration
+        print("  • Generating and saving target configuration visualization...")
+        plt.figure(figsize=(12, 8))
+        udp.plot('target')
+        target_path = os.path.join(output_dir, f"genetic_algorithm_iss_target_{timestamp}.png")
+        plt.savefig(target_path, dpi=300, bbox_inches='tight', facecolor='white')
+        plt.close()
+        saved_plots['target'] = target_path
+        print(f"    Target plot saved: {target_path}")
+        
+    except Exception as e:
+        print(f"  • Visualization error: {e}")
+        print(f"  • Error details: {type(e).__name__}: {str(e)}")
+        import traceback
+        print(f"  • Traceback: {traceback.format_exc()}")
+        print("  • Note: Some visualizations may require specific dependencies")
+    
+    return saved_plots
+
+def save_convergence_plot(fitness_history, best_fitness_evolution, results_path, timestamp):
+    """
+    Generate and save convergence analysis plot with performance metrics.
+    
+    This function creates a comprehensive visualization showing the optimization
+    progress over generations, including both the fitness evolution and distribution
+    analysis for comprehensive performance assessment.
+    
+    Args:
+        fitness_history (list): Complete fitness evolution history from all evaluations
+        best_fitness_evolution (list): Best fitness progression over generations
+        results_path (str): Directory path for results storage
+        timestamp (str): Timestamp for file naming
+        
+    Returns:
+        str: Path to saved convergence plot or None if error
+    """
+    try:
+        plt.figure(figsize=(14, 6))
+        
+        # Create subplot for fitness evolution analysis
+        plt.subplot(1, 2, 1)
+        generations = range(1, len(best_fitness_evolution) + 1)
+        
+        # Plot individual fitness evaluations if available
+        if len(fitness_history) > len(best_fitness_evolution):
+            plt.plot(fitness_history, alpha=0.6, color='lightblue', label='Individual Evaluations', marker='.')
+        
+        # Plot best fitness evolution
+        plt.plot(generations, best_fitness_evolution, color='darkblue', linewidth=2, label='Best Fitness Evolution', marker='o')
+        
+        # Add target fitness reference line
+        plt.axhline(y=-0.991, color='red', linestyle='--', linewidth=2, label='Target Fitness (-0.991)')
+        
+        plt.xlabel('Generation')
+        plt.ylabel('Fitness Value')
+        plt.title('Genetic Algorithm Convergence Analysis')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        
+        # Create subplot for fitness distribution analysis
+        plt.subplot(1, 2, 2)
+        all_fitness_values = fitness_history if len(fitness_history) > len(best_fitness_evolution) else best_fitness_evolution
+        
+        plt.hist(all_fitness_values, bins=50, alpha=0.7, color='skyblue', edgecolor='black')
+        plt.axvline(np.mean(all_fitness_values), color='red', linestyle='--', label=f'Mean: {np.mean(all_fitness_values):.6f}')
+        plt.axvline(np.min(all_fitness_values), color='green', linestyle='--', label=f'Best: {np.min(all_fitness_values):.6f}')
+        plt.axvline(-0.991, color='orange', linestyle=':', label='Target: -0.991')
+        
+        plt.xlabel('Fitness Value')
+        plt.ylabel('Frequency')
+        plt.title('Fitness Distribution Analysis')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        
+        convergence_path = os.path.join(results_path, f"genetic_algorithm_iss_convergence_{timestamp}.png")
+        plt.savefig(convergence_path, dpi=300, bbox_inches='tight', facecolor='white')
+        plt.close()
+        print(f"    Convergence plot saved: {convergence_path}")
+        return convergence_path
+        
+    except Exception as e:
+        print(f"    Convergence plot error: {e}")
+        return None
 LOCAL_SEARCH_RATE = 0.3
 LOCAL_SEARCH_ITERATIONS = 15
 CLEANUP_RATE = 0.8  # Rate of applying inverse-move cleanup
@@ -530,32 +733,372 @@ def local_search(individual, udp, iterations=LOCAL_SEARCH_ITERATIONS):
 
 
 def genetic_algorithm_iss():
-    """ genetic algorithm with proper fitness direction."""
-    print("=" * 60)
-    print("🔧  Genetic Algorithm Solver for ISS Problem")
-    print("✅ FITNESS DIRECTION FIXED: Smaller/negative fitness is better")
-    print("✅ INVERSE-MOVE CLEANUP: Removes canceling moves")
-    print("✅ ADAPTIVE MUTATION: Increases on stagnation")
-    print("🎯 TARGET: Achieve fitness of -0.991 or better")
-    print("=" * 60)
+    """
+    Execute Enhanced Genetic Algorithm for ISS Spacecraft Assembly Optimization.
     
-    start_time = time.time()
+    Implements a comprehensive genetic algorithm optimization with multi-strategy
+    population initialization, adaptive mutation mechanisms, elite preservation,
+    and systematic performance monitoring. The algorithm generates comprehensive
+    experimental documentation suitable for academic research and competitive
+    submission.
     
-    # Initialize UDP
-    print("Initializing UDP for ISS problem...")
+    Returns:
+        tuple: (best_chromosome, best_fitness, best_moves_count)
+            - best_chromosome: Optimal solution representation
+            - best_fitness: Corresponding fitness value (negative indicates superior performance)
+            - best_moves_count: Number of movement commands in optimal solution
+    """
+    print("=" * 80)
+    print("Enhanced Genetic Algorithm for ISS Spacecraft Assembly Problem")
+    print("Programmable Cubes Challenge - GECCO 2024 Competition")
+    print("=" * 80)
+    print()
+    print("Algorithm Configuration:")
+    print("  • Optimization Approach: Advanced Genetic Algorithm")
+    print("  • Problem Domain: ISS Spacecraft Assembly")
+    print("  • Fitness Direction: Negative values indicate superior solutions")
+    print("  • Target Performance: Fitness ≤ -0.991 (championship level)")
+    print()
+    
+    # Initialize experimental timing and metadata
+    experiment_start_time = time.time()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # Initialize UDP and extract problem parameters
+    print("Initializing User Defined Problem (UDP) for ISS configuration...")
     udp = programmable_cubes_UDP('ISS')
     
+    # Extract problem configuration parameters
     num_cubes = udp.setup['num_cubes']
     max_cmds = udp.setup['max_cmds']
     
-    print(f" parameters:")
-    print(f"  - Number of cubes: {num_cubes}")
-    print(f"  - Maximum commands: {max_cmds}")
-    print(f"  - Population size: {POPULATION_SIZE}")
-    print(f"  - Generations: {GENERATIONS}")
-    print(f"  - Base mutation rate: {BASE_MUTATION_RATE}")
-    print(f"  - Cleanup rate: {CLEANUP_RATE}")
+    print(f"Problem Instance Characteristics:")
+    print(f"  • Number of programmable cubes: {num_cubes}")
+    print(f"  • Maximum movement commands: {max_cmds}")
+    print(f"  • Population size: {POPULATION_SIZE}")
+    print(f"  • Maximum generations: {GENERATIONS}")
+    print(f"  • Base mutation rate: {BASE_MUTATION_RATE}")
+    print(f"  • Cleanup rate: {CLEANUP_RATE}")
+    print(f"  • Tournament size: {TOURNAMENT_SIZE}")
+    print(f"  • Elite preservation count: {ELITE_SIZE}")
     print()
+    
+    # Initialize experimental data structures for comprehensive tracking
+    algorithm_start_time = time.time()
+    fitness_evolution_data = []
+    population_diversity_data = []
+    mutation_rate_history = []
+    generation_times = []
+    best_fitness_per_generation = []
+    average_fitness_per_generation = []
+    all_fitness_evaluations = []  # Track all individual fitness evaluations
+    
+    # Initialize population with diverse strategies
+    print("Initializing diverse population using multiple strategies...")
+    population = initialize_population(udp, POPULATION_SIZE)
+    
+    # Comprehensive initial population evaluation
+    print("Conducting comprehensive initial population evaluation...")
+    initial_evaluation_start = time.time()
+    for individual in tqdm(population, desc="Initial Population Assessment"):
+        fitness = evaluate_individual(individual, udp)
+        all_fitness_evaluations.append(fitness)  # Track all evaluations
+    initial_evaluation_time = time.time() - initial_evaluation_start
+    
+    # Sort population by fitness (negative values are superior)
+    population.sort(key=lambda ind: ind.fitness)
+    
+    # Initialize tracking variables with corrected fitness optimization
+    best_individual = population[0].copy()  # Best individual has smallest (most negative) fitness
+    best_fitness_history = [best_individual.fitness]
+    stagnation_count = 0
+    current_mutation_rate = BASE_MUTATION_RATE
+    
+    # Calculate initial population statistics
+    initial_fitness_values = [ind.fitness for ind in population]
+    initial_average_fitness = np.mean(initial_fitness_values)
+    initial_fitness_std = np.std(initial_fitness_values)
+    
+    print(f"Initial Population Analysis:")
+    print(f"  • Best fitness: {best_individual.fitness:.6f} (moves: {best_individual.moves_count})")
+    print(f"  • Average fitness: {initial_average_fitness:.6f}")
+    print(f"  • Fitness standard deviation: {initial_fitness_std:.6f}")
+    print(f"  • Population diversity: {len(set(initial_fitness_values))}/{POPULATION_SIZE}")
+    if hasattr(best_individual, 'placement_accuracy'):
+        print(f"  • Best placement accuracy: {best_individual.placement_accuracy:.3f}")
+        print(f"  • Best move efficiency: {best_individual.move_efficiency:.3f}")
+    print(f"  • Initial evaluation time: {initial_evaluation_time:.2f} seconds")
+    print()
+    
+    # Store initial experimental data
+    best_fitness_per_generation.append(best_individual.fitness)
+    average_fitness_per_generation.append(initial_average_fitness)
+    mutation_rate_history.append(current_mutation_rate)
+    
+    # Main evolutionary optimization loop
+    print("Commencing evolutionary optimization process...")
+    evolution_start_time = time.time()
+    
+    for generation in tqdm(range(GENERATIONS), desc="Evolutionary Generations"):
+        generation_start_time = time.time()
+        new_population = []
+        
+        # Age population for diversity management
+        for ind in population:
+            ind.age += 1
+        
+        # Elite preservation: retain best individuals (smallest fitness values)
+        elite = sorted(population, key=lambda ind: ind.fitness)[:ELITE_SIZE]
+        new_population.extend([ind.copy() for ind in elite])
+        
+        # Generate offspring through genetic operations
+        while len(new_population) < POPULATION_SIZE:
+            # Tournament selection for parent selection
+            parent1 = _tournament_selection(population)
+            parent2 = _tournament_selection(population)
+            
+            # Genetic crossover operation
+            offspring1, offspring2 = _crossover(parent1, parent2, udp)
+            
+            # Adaptive mutation application
+            offspring1 = adaptive_mutation(offspring1, udp, current_mutation_rate)
+            offspring2 = adaptive_mutation(offspring2, udp, current_mutation_rate)
+            
+            # Local search enhancement
+            offspring1 = local_search(offspring1, udp)
+            offspring2 = local_search(offspring2, udp)
+            
+            new_population.extend([offspring1, offspring2])
+        
+        # Population size regulation
+        new_population = new_population[:POPULATION_SIZE]
+        
+        # Comprehensive offspring evaluation
+        for individual in new_population:
+            if not individual.is_evaluated:
+                fitness = evaluate_individual(individual, udp)
+                all_fitness_evaluations.append(fitness)  # Track all evaluations
+        
+        # Population sorting and best individual tracking
+        new_population.sort(key=lambda ind: ind.fitness)
+        
+        # Fitness improvement detection and stagnation management
+        if new_population[0].fitness < best_individual.fitness:  # Improvement detected
+            best_individual = new_population[0].copy()
+            stagnation_count = 0
+            if (generation + 1) % LOG_INTERVAL == 0:
+                print(f"Generation {generation + 1}: New optimum found | Fitness = {best_individual.fitness:.6f}")
+        else:
+            stagnation_count += 1
+        
+        # Experimental data collection
+        generation_fitness_values = [ind.fitness for ind in new_population]
+        best_fitness_per_generation.append(new_population[0].fitness)
+        average_fitness_per_generation.append(np.mean(generation_fitness_values))
+        mutation_rate_history.append(current_mutation_rate)
+        
+        best_fitness_history.append(best_individual.fitness)
+        population = new_population
+        
+        # Adaptive mutation rate adjustment for stagnation prevention
+        if stagnation_count > STAGNATION_THRESHOLD:
+            current_mutation_rate = min(MAX_MUTATION_RATE, current_mutation_rate * ADAPTIVE_MUTATION_FACTOR)
+            if (generation + 1) % LOG_INTERVAL == 0:
+                print(f"Stagnation detected | Increasing mutation rate to {current_mutation_rate:.3f}")
+        else:
+            current_mutation_rate = max(BASE_MUTATION_RATE, current_mutation_rate * 0.98)
+        
+        # Population restart mechanism for severe stagnation
+        if stagnation_count > 50:
+            print("Severe stagnation detected | Implementing population restart")
+            new_pop = initialize_population(udp, POPULATION_SIZE - ELITE_SIZE)
+            population = elite + new_pop
+            stagnation_count = 0
+            current_mutation_rate = BASE_MUTATION_RATE
+        
+        # Record generation timing
+        generation_time = time.time() - generation_start_time
+        generation_times.append(generation_time)
+        
+        # Periodic progress reporting
+        if (generation + 1) % LOG_INTERVAL == 0:
+            current_best = new_population[0].fitness
+            current_avg = np.mean(generation_fitness_values)
+            elapsed = time.time() - algorithm_start_time
+            
+            print(f"Generation {generation + 1:3d}: Best = {current_best:.6f} | "
+                  f"Average = {current_avg:.6f} | Stagnation = {stagnation_count} | "
+                  f"Mutation Rate = {current_mutation_rate:.3f} | Elapsed = {elapsed:.1f}s")
+    
+    # Calculate comprehensive experimental results
+    total_evolution_time = time.time() - evolution_start_time
+    total_experiment_time = time.time() - experiment_start_time
+    
+    print()
+    print("=" * 80)
+    print("Comprehensive Experimental Results Analysis")
+    print("=" * 80)
+    
+    # Final performance metrics
+    final_fitness = best_individual.fitness
+    final_moves = best_individual.moves_count
+    final_chromosome_length = len(best_individual.chromosome)
+    
+    print(f"Optimization Performance Metrics:")
+    print(f"  • Final best fitness: {final_fitness:.6f}")
+    print(f"  • Number of moves used: {final_moves}")
+    print(f"  • Chromosome length: {final_chromosome_length}")
+    print(f"  • Total evolution time: {total_evolution_time:.2f} seconds")
+    print(f"  • Total experiment time: {total_experiment_time:.2f} seconds")
+    print(f"  • Average generation time: {np.mean(generation_times):.3f} seconds")
+    
+    # Advanced performance analysis
+    if hasattr(best_individual, 'placement_accuracy'):
+        print(f"  • Final placement accuracy: {best_individual.placement_accuracy:.3f}")
+        print(f"  • Final move efficiency: {best_individual.move_efficiency:.3f}")
+    
+    # Convergence analysis
+    total_improvement = best_fitness_history[0] - final_fitness
+    improvement_rate = total_improvement / GENERATIONS if GENERATIONS > 0 else 0
+    
+    print(f"Convergence Analysis:")
+    print(f"  • Total fitness improvement: {total_improvement:.6f}")
+    print(f"  • Average improvement per generation: {improvement_rate:.6f}")
+    print(f"  • Final stagnation count: {stagnation_count}")
+    
+    # Competitive performance assessment
+    target_fitness = -0.991  # Championship target
+    benchmark_fitness = 0.186  # Original baseline performance
+    
+    print(f"Competitive Performance Assessment:")
+    print(f"  • Championship target: {target_fitness:.6f}")
+    print(f"  • Baseline performance: {benchmark_fitness:.6f}")
+    print(f"  • Current performance: {final_fitness:.6f}")
+    
+    # Performance categorization and status determination
+    if final_fitness <= target_fitness:
+        performance_status = "CHAMPION"
+        print(f"  • Status: Championship-level performance achieved")
+        print(f"  • Result: Ready for competitive submission")
+    elif final_fitness < -0.5:
+        progress_percentage = (abs(final_fitness) / 0.991) * 100
+        performance_status = "ELITE"
+        print(f"  • Status: Elite performance | Progress: {progress_percentage:.1f}% toward target")
+    elif final_fitness < 0:
+        progress_percentage = (abs(final_fitness) / 0.991) * 100
+        performance_status = "COMPETITIVE"
+        print(f"  • Status: Competitive performance | Progress: {progress_percentage:.1f}% toward target")
+    else:
+        improvement_over_baseline = benchmark_fitness - final_fitness
+        if improvement_over_baseline > 0:
+            performance_status = "IMPROVED"
+            print(f"  • Status: Baseline improvement | Better by {improvement_over_baseline:.6f}")
+        else:
+            performance_status = "EXPERIMENTAL"
+            print(f"  • Status: Experimental result | Fitness: {final_fitness:.6f}")
+    
+    print(f"  • Final Classification: {performance_status}")
+    print()
+    
+    # Generate comprehensive experimental results data structure
+    comprehensive_results = {
+        "experiment_metadata": {
+            "algorithm_name": "Enhanced Genetic Algorithm",
+            "problem_type": "ISS Spacecraft Assembly",
+            "timestamp": timestamp,
+            "total_experiment_duration_seconds": total_experiment_time,
+            "evolution_duration_seconds": total_evolution_time,
+            "initial_evaluation_duration_seconds": initial_evaluation_time
+        },
+        "algorithm_configuration": {
+            "population_size": POPULATION_SIZE,
+            "max_generations": GENERATIONS,
+            "tournament_size": TOURNAMENT_SIZE,
+            "elite_size": ELITE_SIZE,
+            "crossover_rate": CROSSOVER_RATE,
+            "base_mutation_rate": BASE_MUTATION_RATE,
+            "max_mutation_rate": MAX_MUTATION_RATE,
+            "max_chromosome_length": MAX_CHROMOSOME_LENGTH,
+            "min_chromosome_length": MIN_CHROMOSOME_LENGTH,
+            "local_search_rate": LOCAL_SEARCH_RATE,
+            "cleanup_rate": CLEANUP_RATE,
+            "stagnation_threshold": STAGNATION_THRESHOLD,
+            "adaptive_mutation_factor": ADAPTIVE_MUTATION_FACTOR
+        },
+        "problem_configuration": {
+            "number_of_cubes": num_cubes,
+            "maximum_commands": max_cmds,
+            "target_fitness": target_fitness,
+            "baseline_fitness": benchmark_fitness
+        },
+        "optimization_results": {
+            "final_best_fitness": final_fitness,
+            "final_moves_count": final_moves,
+            "final_chromosome_length": final_chromosome_length,
+            "total_fitness_improvement": total_improvement,
+            "average_improvement_per_generation": improvement_rate,
+            "final_stagnation_count": stagnation_count,
+            "performance_status": performance_status,
+            "achieved_target": final_fitness <= target_fitness,
+            "improvement_over_baseline": benchmark_fitness - final_fitness
+        },
+        "convergence_data": {
+            "best_fitness_evolution": best_fitness_per_generation,
+            "average_fitness_evolution": average_fitness_per_generation,
+            "mutation_rate_history": mutation_rate_history,
+            "generation_times": generation_times
+        },
+        "solution_details": {
+            "best_chromosome": best_individual.chromosome,
+            "chromosome_preview": best_individual.chromosome[:30] if len(best_individual.chromosome) > 30 else best_individual.chromosome
+        }
+    }
+    
+    # Add detailed metrics if available
+    if hasattr(best_individual, 'placement_accuracy'):
+        comprehensive_results["optimization_results"]["placement_accuracy"] = best_individual.placement_accuracy
+        comprehensive_results["optimization_results"]["move_efficiency"] = best_individual.move_efficiency
+    
+    # Save comprehensive experimental results
+    print(f"Saving comprehensive experimental results...")
+    results_file_path = save_experimental_results(comprehensive_results)
+    
+    # Generate and save academic visualizations
+    print(f"Generating visualization plots...")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    results_path = os.path.join(repo_root, RESULTS_DIR)
+    os.makedirs(results_path, exist_ok=True)
+    saved_plots = save_solution_visualizations(udp, best_individual.chromosome, results_path, timestamp)
+    
+    # Generate and save convergence analysis plot
+    convergence_plot_path = save_convergence_plot(
+        all_fitness_evaluations, 
+        best_fitness_per_generation, 
+        results_path, 
+        timestamp
+    )
+    
+    print()
+    print("Experimental Documentation Summary:")
+    if results_file_path:
+        print(f"  • Results file: {os.path.basename(results_file_path)}")
+    if convergence_plot_path:
+        print(f"  • Convergence plot: {os.path.basename(convergence_plot_path)}")
+    print(f"  • Solution visualizations: Generated in results directory")
+    print()
+    
+    print("Optimal solution chromosome preview (first 30 elements):")
+    chromosome_preview = best_individual.chromosome[:30] if len(best_individual.chromosome) > 30 else best_individual.chromosome
+    print(f"  {chromosome_preview}" + ("..." if len(best_individual.chromosome) > 30 else ""))
+    
+    print()
+    print("=" * 80)
+    print("Enhanced Genetic Algorithm Optimization Completed")
+    print(f"Performance Classification: {performance_status}")
+    print("Comprehensive experimental documentation generated")
+    print("=" * 80)
+    
+    return best_individual.chromosome, best_individual.fitness, best_individual.moves_count
     
     # Initialize population
     print("Initializing  population...")
