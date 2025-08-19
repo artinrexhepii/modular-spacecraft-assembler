@@ -589,7 +589,7 @@ def greedy_heuristic_optimization_jwst():
     print()
     
     # Initialize optimization tracking variables
-    best_fitness = float('-inf')
+    best_fitness = float('inf')
     optimal_chromosome = None
     optimal_moves = 0
     fitness_history = []
@@ -611,7 +611,7 @@ def greedy_heuristic_optimization_jwst():
         fitness_history.append(fitness)
         
         # Update optimal solution if improvement achieved
-        if fitness > best_fitness:
+        if fitness < best_fitness:
             best_fitness = fitness
             optimal_chromosome = chromosome.copy()
             optimal_moves = count_moves(chromosome)
@@ -652,8 +652,8 @@ def greedy_heuristic_optimization_jwst():
     
     # Comparative performance analysis
     baseline_fitness = 0.100  # Established baseline for JWST problem
-    if baseline_fitness > 0 and best_fitness > baseline_fitness:
-        improvement = ((best_fitness - baseline_fitness) / baseline_fitness) * 100
+    if baseline_fitness > 0 and best_fitness < baseline_fitness:
+        improvement = ((baseline_fitness - best_fitness) / abs(baseline_fitness)) * 100
         print(f"Performance improvement over baseline: {improvement:.1f}%")
     else:
         performance_gap = best_fitness - baseline_fitness
