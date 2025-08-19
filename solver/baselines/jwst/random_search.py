@@ -324,7 +324,7 @@ def stochastic_search_jwst():
     print()
     
     # Initialize optimization tracking variables
-    best_fitness = float('-inf')
+    best_fitness = float('inf')
     best_chromosome = None
     best_moves = 0
     fitness_history = []
@@ -347,7 +347,7 @@ def stochastic_search_jwst():
         fitness_history.append(fitness)
         
         # Update optimal solution if improvement discovered
-        if fitness > best_fitness:
+        if fitness < best_fitness:
             best_fitness = fitness
             best_chromosome = chromosome.copy()
             best_moves = quantify_solution_complexity(chromosome)
